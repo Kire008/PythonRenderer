@@ -1,15 +1,14 @@
-from Scene.Objects.Template import ObjectTemp
+from Scene.Objects.Template import ObjectTemp, Cross
 import numpy as np
 
 class Triangle(ObjectTemp):
     def __init__(self, position, v0, v1, v2, color):
         super().__init__(color)
         self.position = np.array(position, dtype=np.float64)
-        self.local = np.array([v0, v1, v2], dtype=np.float64)   # (3, 3)
+        self.local = np.array([v0, v1, v2], dtype=np.float64)
         self._Build()
 
     def _Build(self):
-        """Recompute world-space data. Call again after changing position."""
         w = self.local + self.position
         self.v0, self.v1, self.v2 = w
         self.e1 = self.v1 - self.v0
@@ -17,31 +16,29 @@ class Triangle(ObjectTemp):
         n = np.cross(self.e1, self.e2)
         self.normal = n / np.linalg.norm(n)
 
+    def SetPosition(self, position):
+        self.position = np.array(position, dtype=np.float64)
+        self._Build()
 
     def Intersect(self, origins, d, xp):
-        v0 = xp.asarray(self.v0)
-        e1 = xp.asarray(self.e1)
-        e2 = xp.asarray(self.e2)
+        v0 = xp.asarray(self.v0, dtype=xp.float32)
+        e1 = xp.asarray(self.e1, dtype=xp.float32)
+        e2 = xp.asarray(self.e2, dtype=xp.float32)
 
-        # h = d x e2
-        h = xp.cross(d, e2)
+        h = Cross(d, e2, xp)
         a = xp.sum(e1 * h, axis=-1)
-
         parallel = xp.abs(a) < 1e-8
-        a_safe = xp.where(parallel, 1.0, a)
-        f = 1.0 / a_safe
+        f = 1.0 / xp.where(parallel, 1.0, a)
 
         s = origins - v0
         u = f * xp.sum(s * h, axis=-1)
-
-        q = xp.cross(s, e1)
+        q = Cross(s, e1, xp)
         v = f * xp.sum(d * q, axis=-1)
-
         t = f * xp.sum(e2 * q, axis=-1)
 
         valid = (~parallel) & (u >= 0) & (v >= 0) & (u + v <= 1) & (t > 1e-6)
         return xp.where(valid, t, xp.inf)
 
     def Normal(self, points, xp):
-        n = xp.asarray(self.normal)
+        n = xp.asarray(self.normal, dtype=xp.float32)
         return xp.broadcast_to(n, points.shape)

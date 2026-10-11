@@ -4,7 +4,7 @@ from pygame import Vector3 as Vec3
 
 class Camera:
     def __init__(self, pos, pitch, yaw):
-        self.pos = pos
+        self.pos = np.array(pos)
         self.pitch = 0
         self.yaw = 0
 

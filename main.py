@@ -1,12 +1,14 @@
+import time
+
 import pygame as pg
 from src.Renderer.Renderer import Renderer
 from src.Scene.Scenes.TestScene1 import scene as TestScene1
 class Application:
     def __init__(self):
         self.running = True
-        self.WIDTH = 800
-        self.HEIGHT = 600
-        self.resolution = 0.8
+        self.WIDTH = 1600
+        self.HEIGHT = 1000
+        self.resolution = 0.2
         self.hardwareAcceleration = True
 
         self.WIN = pg.display.set_mode((self.WIDTH, self.HEIGHT))
@@ -19,6 +21,11 @@ class Application:
 
         # Test a scene
         self.Renderer.UploadScene(TestScene1)
+
+        self.clickDelay = time.time()
+
+        self.UpDelay = time.time()
+        self.DownDelay = time.time()
 
         pg.mouse.set_visible(False)
         pg.event.set_grab(True)
@@ -50,6 +57,25 @@ class Application:
             self.Renderer.currentScene.currentCamera.moveUp(dt)
         if keys[pg.K_LCTRL]:
             self.Renderer.currentScene.currentCamera.moveDown(dt)
+
+
+        # Change hardwareacceleration
+        if keys[pg.K_1] and time.time()-self.clickDelay > 1:
+            self.clickDelay = time.time()
+            self.hardwareAcceleration = (not self.hardwareAcceleration)
+            self.Renderer.xp = self.Renderer.ToggleHardwareAcceleration(self.hardwareAcceleration)
+
+
+        if keys[pg.K_UP] and time.time()-self.UpDelay > 0.2:
+            self.UpDelay = time.time()
+            self.resolution *= 2
+            self.resolution = min(1, self.resolution)
+            self.Renderer.resolution = self.resolution
+        if keys[pg.K_DOWN] and time.time()-self.DownDelay > 0.2 :
+            self.DownDelay = time.time()
+            self.resolution /= 2
+            self.Renderer.resolution = self.resolution
+
 
 
         # Mouse input
